@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="Prompt builder for UX/UI web design and dashboard design">
+<title>UX/UI Prompt Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+/* Layout: two-pane workbench — configuration column on the left, sticky live prompt on the right; stacks on narrow screens */
+:root{
+  --bg:#f2f4f7; --surface:#ffffff; --surface-2:#f7f9fb; --line:#dde3ea; --line-strong:#c4cdd8;
+  --fg:#16202c; --muted:#5d6b7c; --accent:#0b62d6; --accent-soft:#e6efff; --accent-fg:#ffffff;
+  --code-bg:#121a24; --code-fg:#d6e2f0; --code-key:#7cc4ff;
+  --ok:#11795a; --ok-soft:#dcf3ea; --warn:#a15c00; --warn-soft:#fdefd8;
+  --font-ui:"IBM Plex Sans Thai","Leelawadee UI","Tahoma",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --r:12px; --r-sm:8px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e141b; --surface:#151d27; --surface-2:#1a2430; --line:#263241; --line-strong:#34445a;
+  --fg:#e6edf5; --muted:#93a3b6; --accent:#5aa2ff; --accent-soft:#16294a; --accent-fg:#06121f;
+  --code-bg:#0a0f15; --code-fg:#d6e2f0; --code-key:#7cc4ff;
+  --ok:#4fd1a1; --ok-soft:#113328; --warn:#f2b45a; --warn-soft:#3a2a12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e141b; --surface:#151d27; --surface-2:#1a2430; --line:#263241; --line-strong:#34445a;
+  --fg:#e6edf5; --muted:#93a3b6; --accent:#5aa2ff; --accent-soft:#16294a; --accent-fg:#06121f;
+  --code-bg:#0a0f15; --code-fg:#d6e2f0; --code-key:#7cc4ff;
+  --ok:#4fd1a1; --ok-soft:#113328; --warn:#f2b45a; --warn-soft:#3a2a12; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:14px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1440px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header */
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:14px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.mark{width:36px;height:36px;border-radius:9px;background:var(--fg);color:var(--bg);display:grid;place-items:center;font-family:var(--font-mono);font-weight:500;font-size:13px;letter-spacing:-.5px}
+.brand h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.1px}
+.brand p{margin:0;font-size:12px;color:var(--muted)}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:7px 14px;border-radius:7px;font-weight:600;color:var(--muted);font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(10,20,40,.12)}
+.seg.lg button{padding:9px 18px;font-size:14px}
+
+/* templates strip */
+.templates{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-block:14px}
+.templates .lbl{font-size:12px;color:var(--muted);font-weight:600;margin-right:4px}
+.tpl{border:1px dashed var(--line-strong);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:500}
+.tpl:hover{border-style:solid;border-color:var(--accent);color:var(--accent)}
+
+/* shell */
+.shell{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,520px);gap:20px;align-items:start;padding-block:4px 32px}
+.col{display:grid;gap:14px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.card>h2{display:flex;align-items:baseline;gap:10px;margin:0;padding:14px 18px;border-bottom:1px solid var(--line);font-size:14.5px;font-weight:700}
+.card>h2 .n{font-family:var(--font-mono);font-size:11px;color:var(--muted);font-weight:500}
+.card>h2 small{font-weight:400;color:var(--muted);font-size:12px;margin-left:auto;text-align:right}
+.card .body{padding:16px 18px;display:grid;gap:16px}
+.field{display:grid;gap:7px;min-width:0}
+.field>.lab{font-weight:600;font-size:13px}
+.field>.lab .hint{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:6px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+input[type=text],textarea,select{width:100%;border:1px solid var(--line-strong);background:var(--surface);border-radius:var(--r-sm);padding:9px 11px;outline:none}
+textarea{resize:vertical;min-height:64px}
+input[type=text]:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface-2);border-radius:7px;padding:6px 10px;font-size:12.5px;color:var(--fg)}
+.chip:hover{border-color:var(--line-strong)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.chips.multi .chip[aria-pressed="true"]::before{content:"✓ ";font-weight:700}
+.colors{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.sw{display:grid;gap:5px;min-width:0}
+.sw span{font-size:11.5px;color:var(--muted)}
+.sw .in{display:flex;align-items:center;gap:6px;border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:4px 6px 4px 4px;background:var(--surface)}
+.sw input[type=color]{width:28px;height:28px;border:0;padding:0;background:none;border-radius:6px;flex:none}
+.sw input[type=text]{border:0;padding:2px 0;font-family:var(--font-mono);font-size:12px;min-width:0;box-shadow:none}
+.contrast{display:flex;gap:8px;flex-wrap:wrap;font-size:12px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;font-weight:600;font-size:11.5px;font-variant-numeric:tabular-nums}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.mock{border-radius:var(--r-sm);border:1px solid var(--line);overflow:hidden;font-size:12px}
+.mock .bar{height:8px}
+.mock .in{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mock button{border:0;border-radius:6px;padding:6px 12px;font-weight:600;font-size:12px}
+
+/* prompt panel */
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 14px)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.panel-head h2{margin:0;font-size:14.5px}
+.live{font-size:11px;font-weight:700;color:var(--ok);display:inline-flex;align-items:center;gap:6px}
+.live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.panel-body{padding:14px 18px;display:grid;gap:12px}
+.opts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.opts .seg button{padding:5px 11px;font-size:12px}
+pre.prompt{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:16px;font:12px/1.7 var(--font-mono);white-space:pre-wrap;overflow-wrap:anywhere;max-height:min(62vh,640px);min-height:300px;overflow:auto}
+pre.prompt .h{color:var(--code-key);font-weight:500}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line-strong);background:var(--surface);border-radius:var(--r-sm);padding:8px 13px;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--fg)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.danger-armed{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.stat b{display:block;font-size:15px;font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;color:var(--muted)}
+.presets{display:grid;gap:6px}
+.preset{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.preset b{font-size:12.5px;display:block}
+.preset small{color:var(--muted);font-size:11px}
+.preset .tag{font-family:var(--font-mono);font-size:10px;padding:1px 6px;border-radius:4px;background:var(--surface-2);color:var(--muted);margin-left:6px}
+.preset button{border:0;background:none;color:var(--accent);font-weight:600;font-size:12px;padding:4px 6px}
+.preset button.del{color:var(--muted)}
+.empty{font-size:12px;color:var(--muted)}
+.save-row{display:flex;gap:8px}
+.save-row input{flex:1;min-width:0}
+details.tips summary{cursor:pointer;font-weight:600;font-size:13px}
+details.tips ul{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:12.5px;display:grid;gap:4px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);opacity:0;pointer-events:none;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:13px;transition:.2s;z-index:20}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+footer{color:var(--muted);font-size:11.5px;text-align:center;padding-block:0 28px}
+@media (max-width:1040px){.shell{grid-template-columns:1fr}.side{position:static}}
+@media (max-width:620px){.row2{grid-template-columns:1fr}.colors{grid-template-columns:repeat(2,minmax(0,1fr))}.stats{grid-template-columns:1fr 1fr 1fr}.card>h2{flex-wrap:wrap}.card>h2 small{margin-left:0;text-align:left;width:100%}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="mark">UX</div>
+      <div><h1>UX/UI Prompt Studio</h1><p>สร้าง Prompt สำหรับงาน Web Design และ Dashboard Design</p></div>
+    </div>
+    <div class="seg lg" role="group" aria-label="โหมดงาน">
+      <button id="modeWeb" aria-pressed="true" data-mode="web">Web Design</button>
+      <button id="modeDash" aria-pressed="false" data-mode="dash">Dashboard Design</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="templates" id="templates"></div>
+  <div class="shell">
+    <main class="col" id="form"></main>
+    <aside class="col side">
+      <section class="card">
+        <div class="panel-head"><h2>Prompt ที่ได้</h2><span class="live">อัปเดตอัตโนมัติ</span></div>
+        <div class="panel-body">
+          <div class="opts">
+            <div class="seg" role="group" aria-label="รูปแบบ Prompt">
+              <button data-fmt="full" aria-pressed="true">Full</button>
+              <button data-fmt="short" aria-pressed="false">Short</button>
+              <button data-fmt="visual" aria-pressed="false">Visual only</button>
+            </div>
+            <div class="seg" role="group" aria-label="ภาษาของ Prompt">
+              <button data-lang="en" aria-pressed="true">EN</button>
+              <button data-lang="th" aria-pressed="false">ไทย</button>
+            </div>
+          </div>
+          <pre class="prompt" id="out" aria-live="polite" tabindex="0"></pre>
+          <div class="actions">
+            <button class="btn primary" id="copyBtn">คัดลอก Prompt</button>
+            <button class="btn" id="resetBtn">รีเซ็ตทั้งหมด</button>
+          </div>
+          <div class="stats">
+            <div class="stat"><b id="sWords">0</b><span>คำ</span></div>
+            <div class="stat"><b id="sChars">0</b><span>ตัวอักษร</span></div>
+            <div class="stat"><b id="sItems">0</b><span>ตัวเลือกที่ใช้</span></div>
+          </div>
+        </div>
+      </section>
+      <section class="card">
+        <div class="panel-head"><h2>Preset ของฉัน</h2><span class="empty">เก็บในเบราว์เซอร์นี้</span></div>
+        <div class="panel-body">
+          <div class="save-row"><input type="text" id="presetName" placeholder="ตั้งชื่อ เช่น HR Dashboard มาตรฐาน"><button class="btn" id="saveBtn">บันทึก</button></div>
+          <div class="presets" id="presetList"></div>
+        </div>
+      </section>
+      <section class="card">
+        <div class="panel-body">
+          <details class="tips" id="tips"><summary>เคล็ดลับการใช้ Prompt</summary><ul id="tipList"></ul></details>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+<footer>UX/UI Prompt Studio · ทำงานในเบราว์เซอร์ ไม่ส่งข้อมูลออกไปภายนอก</footer>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let mode='web', fmt='full', lang='en';
+const S={};
+
+/* ---------- schema ---------- */
+const SECTIONS=[
+ {key:'project',title:'ข้อมูลโปรเจกต์',sub:'ชื่อ ผู้ใช้ และเป้าหมาย',fields:[
+  {id:'name',type:'text',label:'ชื่อโปรเจกต์ / ผลิตภัณฑ์',ph:{web:'เช่น Daikin Service Portal',dash:'เช่น Plant OEE Dashboard'}},
+  {id:'audience',type:'text',label:'กลุ่มผู้ใช้หลัก',ph:{web:'เช่น ลูกค้าองค์กร, ตัวแทนจำหน่าย, พนักงาน',dash:'เช่น ผู้จัดการโรงงาน, หัวหน้าไลน์, ผู้บริหาร'}},
+  {id:'goal',type:'textarea',label:'เป้าหมายหลัก',hint:'ผู้ใช้ต้องทำอะไรได้สำเร็จ',ph:{web:'เช่น ให้ลูกค้าหาข้อมูลสินค้าและติดต่อฝ่ายขายได้ภายใน 2 คลิก',dash:'เช่น ให้ผู้จัดการเห็นปัญหาการผลิตของวันนี้ภายใน 10 วินาที และรู้ว่าต้องแก้ที่ไลน์ไหน'}},
+  {id:'uiLang',type:'single',label:'ภาษาบนหน้าจอ',options:['Thai','English','Thai + English','Japanese + English'],def:'Thai'}
+ ]},
+ {key:'site',mode:'web',title:'โครงสร้างเว็บไซต์',sub:'ประเภท ส่วนประกอบหน้า และการนำทาง',fields:[
+  {id:'siteType',type:'single',label:'ประเภทเว็บไซต์',options:['Corporate website','Landing page','Product / Service page','Portal / Intranet','Campaign microsite','Knowledge base / Blog','E-commerce','Web application'],def:'Corporate website'},
+  {id:'sections',type:'multi',label:'Section ในหน้า',hint:'เรียงตามลำดับที่เลือก',options:['Hero','Value proposition','Features / Services','How it works','Stats / Numbers','Product showcase','Case studies','Testimonials','Pricing','Team','News / Blog','FAQ','Call to action','Contact form','Footer'],def:['Hero','Features / Services','Stats / Numbers','Call to action','Footer']},
+  {id:'hero',type:'single',label:'รูปแบบ Hero',options:['Headline + CTA','Split text / image','Product screenshot','Full-bleed photo','Video background','Illustration','Search-first'],def:'Split text / image'},
+  {id:'webNav',type:'single',label:'การนำทาง',options:['Sticky top bar','Mega menu','Top bar + hamburger on mobile','Side navigation','Minimal'],def:'Sticky top bar'},
+  {id:'cta',type:'single',label:'Conversion หลัก',options:['Contact sales','Request a quote','Sign up / Register','Download brochure','Book a demo','Buy now','Find a dealer','Read more'],def:'Contact sales'},
+  {id:'tone',type:'single',label:'โทนของข้อความ',options:['Professional & trustworthy','Friendly & approachable','Bold & confident','Technical & precise','Warm & human'],def:'Professional & trustworthy'},
+  {id:'seo',type:'multi',label:'SEO & Content',options:['Semantic HTML','Meta title / description','Open Graph tags','Structured data (JSON-LD)','Fast loading / Core Web Vitals','Image alt text','Multilingual URLs'],def:['Semantic HTML','Meta title / description','Image alt text']}
+ ]},
+ {key:'dash',mode:'dash',title:'โครงสร้างแดชบอร์ด',sub:'ประเภท KPI กราฟ และตัวกรอง',fields:[
+  {id:'dashType',type:'single',label:'ประเภทแดชบอร์ด',options:['Executive overview','Operational monitoring','Analytical / exploration','KPI scorecard','Manufacturing / OEE','Quality control','Sales & pipeline','HR & people','Project tracking','Finance & budget'],def:'Executive overview'},
+  {id:'question',type:'textarea',label:'คำถามหลักที่แดชบอร์ดต้องตอบ',hint:'1–3 ข้อ',ph:{dash:'เช่น วันนี้ผลิตได้ตามเป้าหรือไม่? ไลน์ไหนมีปัญหา? ปัญหาหลักคืออะไร?'}},
+  {id:'kpis',type:'textarea',label:'KPI ที่ต้องแสดง',hint:'บรรทัดละ 1 ตัว ใส่เป้าหมายได้',ph:{dash:'OEE (%) เป้า 85%\nOutput (units/shift)\nDefect rate (ppm)\nDowntime (min) แยกตามสาเหตุ'}},
+  {id:'dashLayout',type:'single',label:'Layout',options:['Sidebar + header','Top navigation + tabs','Bento grid','Single-scroll report','Wall display / TV mode'],def:'Sidebar + header'},
+  {id:'charts',type:'multi',label:'ชนิดกราฟ',options:['KPI cards + sparkline','Line (trend)','Bar (compare)','Stacked bar','Combo bar + line','Donut (≤5 parts)','Gauge / bullet chart','Heatmap','Pareto','Scatter','Funnel','Map','Data table','Gantt / timeline'],def:['KPI cards + sparkline','Line (trend)','Bar (compare)','Data table']},
+  {id:'filters',type:'multi',label:'ตัวกรอง',options:['Date range','Compare period','Department','Plant / Line','Product / Model','Region / Branch','Shift','Customer','Employee level'],def:['Date range','Compare period','Department']}
+ ]},
+ {key:'data',mode:'dash',title:'ข้อมูลและฟีเจอร์',sub:'แหล่งข้อมูล การอัปเดต และการแจ้งเตือน',fields:[
+  {id:'source',type:'single',label:'แหล่งข้อมูล',options:['Realistic sample data','CSV / Excel upload','Google Sheets','REST API','SQL database','Firebase / Supabase','Power BI / existing BI'],def:'Realistic sample data'},
+  {id:'refresh',type:'single',label:'ความถี่อัปเดต',options:['Static snapshot','Daily','Hourly','Near real-time (≤1 min)'],def:'Daily'},
+  {id:'alerts',type:'multi',label:'สถานะและการแจ้งเตือน',options:['Target / threshold lines','RAG status (green / amber / red)','Variance vs target / last period','Anomaly highlight','Alert list / inbox','Last updated timestamp'],def:['Target / threshold lines','RAG status (green / amber / red)','Variance vs target / last period','Last updated timestamp']},
+  {id:'dashFeat',type:'multi',label:'ฟีเจอร์เพิ่มเติม',options:['Drill-down to detail','Rich tooltips','Export PDF / Excel','Role-based views','Saved views / bookmarks','Annotations / comments','Dark mode toggle','Full-screen presentation mode'],def:['Drill-down to detail','Rich tooltips','Export PDF / Excel']}
+ ]},
+ {key:'visual',title:'ภาพลักษณ์และ Design System',sub:'สไตล์ สี ฟอนต์ และความหนาแน่น',fields:[
+  {id:'style',type:'single',label:'Visual style',options:['Corporate clean','Modern minimal','Soft UI','Glassmorphism','Premium dark','Material Design','Flat & colorful','Editorial'],def:'Corporate clean'},
+  {id:'colors',type:'colors',label:'ชุดสี'},
+  {id:'font',type:'select',label:'ฟอนต์',options:['IBM Plex Sans Thai','Noto Sans Thai','Kanit','Prompt','Sarabun','Anuphan','Inter','Roboto','Use brand typography'],def:'IBM Plex Sans Thai',half:1},
+  {id:'radius',type:'select',label:'ความโค้งมุม',options:['Sharp (4px)','Subtle (8px)','Rounded (12–16px)','Extra rounded (24px)'],def:'Subtle (8px)',half:1},
+  {id:'density',type:'single',label:'ความหนาแน่นของข้อมูล',options:['Spacious','Balanced','Compact / information-dense'],def:'Balanced'},
+  {id:'motion',type:'single',label:'Animation',options:['None','Subtle','Moderate','Expressive'],def:'Subtle'}
+ ]},
+ {key:'ux',title:'UX, Accessibility และ Responsive',sub:'มาตรฐานที่ต้องผ่าน',fields:[
+  {id:'states',type:'multi',label:'สถานะที่ต้องออกแบบ',options:['Hover / focus / active','Loading skeleton','Empty state','Error state','Success feedback / toast','Disabled state','No-permission state'],def:['Hover / focus / active','Loading skeleton','Empty state','Error state']},
+  {id:'uxp',type:'multi',label:'หลัก UX',options:['WCAG 2.2 AA contrast','Full keyboard navigation','Clear visual hierarchy','Progressive disclosure','Consistent design tokens','Helpful validation messages','Reduced-motion support'],def:['WCAG 2.2 AA contrast','Full keyboard navigation','Clear visual hierarchy','Consistent design tokens']},
+  {id:'responsive',type:'single',label:'อุปกรณ์เป้าหมาย',options:['Desktop + tablet + mobile','Mobile-first','Desktop-first','Desktop only','Large display / TV'],def:'Desktop + tablet + mobile'}
+ ]},
+ {key:'build',title:'เครื่องมือและสิ่งที่ต้องส่งมอบ',sub:'ปรับ Prompt ให้เหมาะกับ AI ที่ใช้',fields:[
+  {id:'aiTool',type:'single',label:'จะนำ Prompt ไปใช้กับ',options:['Claude','ChatGPT','Gemini','v0 / Lovable / Bolt','Figma Make','Cursor / Copilot'],def:'Claude'},
+  {id:'platform',type:'select',label:'Platform',options:['Single-file HTML/CSS/JS','React','Next.js','Vue','Python Streamlit','Figma design only','Let AI recommend'],def:'Single-file HTML/CSS/JS',half:1},
+  {id:'framework',type:'select',label:'UI framework',options:['Tailwind CSS','shadcn/ui + Tailwind','Bootstrap','Material UI','Ant Design','Vanilla CSS','Not specified'],def:'Tailwind CSS',half:1},
+  {id:'deliver',type:'multi',label:'สิ่งที่ต้องได้',options:['Working, clickable UI','Reusable components','Design tokens (CSS variables)','Realistic sample data','Responsive layouts','Short design rationale','Setup / deploy guide','Commented code'],def:['Working, clickable UI','Reusable components','Realistic sample data','Responsive layouts']},
+  {id:'extra',type:'textarea',label:'ข้อกำหนดเพิ่มเติม',ph:{web:'เช่น มีระบบ Login, ใช้โลโก้บริษัท, ห้ามใช้รูป stock ที่ดูไม่จริง',dash:'เช่น ต้องมีหน้า Login, แยกสิทธิ์ Admin / Viewer, ตัวเลขใช้ทศนิยม 1 ตำแหน่ง'}}
+ ]}
+];
+const COLOR_DEF={primary:'#0b62d6',accent:'#14b8a6',bg:'#f5f7fa',text:'#172033'};
+
+const TEMPLATES={
+ web:[
+  {name:'Corporate Website',v:{siteType:'Corporate website',sections:['Hero','Value proposition','Features / Services','Stats / Numbers','Case studies','News / Blog','Call to action','Footer'],hero:'Split text / image',webNav:'Mega menu',cta:'Contact sales',tone:'Professional & trustworthy',style:'Corporate clean',density:'Balanced',colors:{primary:'#0b62d6',accent:'#14b8a6',bg:'#f5f7fa',text:'#172033'}}},
+  {name:'Product Landing',v:{siteType:'Landing page',sections:['Hero','Value proposition','How it works','Product showcase','Testimonials','Pricing','FAQ','Call to action','Footer'],hero:'Product screenshot',webNav:'Minimal',cta:'Book a demo',tone:'Bold & confident',style:'Modern minimal',density:'Spacious',motion:'Moderate',colors:{primary:'#1d4ed8',accent:'#f59e0b',bg:'#ffffff',text:'#0f172a'}}},
+  {name:'HR Intranet Portal',v:{siteType:'Portal / Intranet',sections:['Hero','News / Blog','Features / Services','FAQ','Contact form','Footer'],hero:'Search-first',webNav:'Side navigation',cta:'Read more',tone:'Friendly & approachable',style:'Soft UI',density:'Balanced',colors:{primary:'#0f766e',accent:'#f97316',bg:'#f6f8f7',text:'#1c2a27'}}},
+  {name:'Campaign Microsite',v:{siteType:'Campaign microsite',sections:['Hero','Value proposition','Product showcase','Stats / Numbers','Call to action','Footer'],hero:'Full-bleed photo',webNav:'Minimal',cta:'Sign up / Register',tone:'Warm & human',style:'Editorial',density:'Spacious',motion:'Expressive',colors:{primary:'#be123c',accent:'#0ea5e9',bg:'#fffaf7',text:'#1f1720'}}}
+ ],
+ dash:[
+  {name:'Executive KPI',v:{dashType:'Executive overview',question:'ธุรกิจเดือนนี้เป็นไปตามเป้าหรือไม่? หน่วยงานไหนต่ำกว่าเป้า? แนวโน้ม 12 เดือนเป็นอย่างไร?',kpis:'Revenue (MB) vs target\nGross margin (%)\nOrder backlog (units)\nCustomer satisfaction (score /5)\nOn-time delivery (%)',dashLayout:'Bento grid',charts:['KPI cards + sparkline','Combo bar + line','Bar (compare)','Data table'],filters:['Date range','Compare period','Region / Branch'],style:'Corporate clean',density:'Balanced'}},
+  {name:'Factory OEE',v:{dashType:'Manufacturing / OEE',question:'วันนี้แต่ละไลน์ผลิตได้ตามเป้าหรือไม่? OEE ต่ำเพราะอะไร? ต้องแก้ไลน์ไหนก่อน?',kpis:'OEE (%) target 85%\nAvailability / Performance / Quality (%)\nOutput (units/shift) vs plan\nDefect rate (ppm)\nDowntime (min) by reason',dashLayout:'Wall display / TV mode',charts:['KPI cards + sparkline','Gauge / bullet chart','Pareto','Heatmap','Line (trend)'],filters:['Date range','Plant / Line','Shift','Product / Model'],refresh:'Near real-time (≤1 min)',alerts:['Target / threshold lines','RAG status (green / amber / red)','Anomaly highlight','Alert list / inbox','Last updated timestamp'],style:'Premium dark',density:'Compact / information-dense',responsive:'Large display / TV',colors:{primary:'#3b9cff',accent:'#22d3ee',bg:'#0d141c',text:'#e6edf5'}}},
+  {name:'HR & Learning',v:{dashType:'HR & people',question:'พนักงานเรียนครบตามแผนหรือไม่? หน่วยงานไหนต้องติดตาม? ทักษะไหนยังขาด?',kpis:'Training completion (%) target 90%\nLearning hours / employee\nHeadcount & turnover rate (%)\nSkill gap by competency\nUpcoming mandatory courses',dashLayout:'Sidebar + header',charts:['KPI cards + sparkline','Stacked bar','Heatmap','Data table'],filters:['Date range','Department','Employee level'],style:'Soft UI',density:'Balanced',colors:{primary:'#0f766e',accent:'#8b5cf6',bg:'#f6f8f7',text:'#1c2a27'}}},
+  {name:'Sales Pipeline',v:{dashType:'Sales & pipeline',question:'Pipeline พอปิดเป้าไตรมาสนี้หรือไม่? ดีลไหนเสี่ยง? เซลส์คนไหนต้องช่วย?',kpis:'Sales vs quota (%)\nPipeline value (MB) by stage\nWin rate (%)\nAverage deal cycle (days)\nTop 10 deals at risk',dashLayout:'Top navigation + tabs',charts:['KPI cards + sparkline','Funnel','Bar (compare)','Line (trend)','Data table'],filters:['Date range','Compare period','Region / Branch','Customer'],style:'Modern minimal',density:'Balanced',colors:{primary:'#1d4ed8',accent:'#f59e0b',bg:'#f7f8fb',text:'#111827'}}}
+ ]
+};
+
+const TIPS={
+ web:['ใส่เป้าหมายเป็นพฤติกรรมที่วัดได้ เช่น "ติดต่อฝ่ายขายได้ใน 2 คลิก" จะได้ผลดีกว่า "ใช้งานง่าย"','เลือก Section ตามลำดับที่อยากให้เรียงในหน้า Prompt จะเรียงตามนั้น','ถ้ามีข้อความจริง (สโลแกน, ชื่อบริการ) ใส่ในข้อกำหนดเพิ่มเติม AI จะไม่ต้องแต่งเอง','ส่ง Prompt แบบ Visual only ให้ Figma Make ก่อน แล้วค่อยใช้ Full สำหรับเขียนโค้ด'],
+ dash:['เริ่มจาก "คำถามที่ต้องตอบ" ก่อนเลือกกราฟ แดชบอร์ดที่ดีตอบคำถามได้ใน 5–10 วินาที','ใส่ KPI พร้อมหน่วยและเป้าหมาย เช่น "OEE (%) target 85%" AI จะทำเส้นเป้าและสถานะสีให้ถูกต้อง','ถ้ามีไฟล์ข้อมูลจริง แนบไปพร้อม Prompt และเลือกแหล่งข้อมูลเป็น CSV / Excel','ใช้ Donut เฉพาะข้อมูลไม่เกิน 5 กลุ่ม มากกว่านั้นใช้ Bar จะอ่านง่ายกว่า']
+};
+
+/* ---------- state ---------- */
+function resetState(){
+ for(const k in S)delete S[k];
+ SECTIONS.forEach(s=>s.fields.forEach(f=>{
+  if(f.type==='colors')S.colors={...COLOR_DEF};
+  else if(f.type==='multi')S[f.id]=[...(f.def||[])];
+  else S[f.id]=f.def||'';
+ }));
+}
+const visibleSections=()=>SECTIONS.filter(s=>!s.mode||s.mode===mode);
+
+/* ---------- form rendering ---------- */
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function fieldHTML(f){
+ const lab=`<div class="lab">${f.label}${f.hint?`<span class="hint">${f.hint}</span>`:''}</div>`;
+ const ph=f.ph?(f.ph[mode]||''):'';
+ if(f.type==='text')return `<label class="field">${lab}<input type="text" id="f_${f.id}" data-f="${f.id}" value="${esc(S[f.id])}" placeholder="${esc(ph)}"></label>`;
+ if(f.type==='textarea')return `<label class="field">${lab}<textarea id="f_${f.id}" data-f="${f.id}" rows="${f.id==='kpis'?5:3}" placeholder="${esc(ph)}">${esc(S[f.id])}</textarea></label>`;
+ if(f.type==='select')return `<label class="field">${lab}<select id="f_${f.id}" data-f="${f.id}">${f.options.map(o=>`<option${o===S[f.id]?' selected':''}>${esc(o)}</option>`).join('')}</select></label>`;
+ if(f.type==='single'||f.type==='multi'){
+  const on=o=>f.type==='multi'?S[f.id].includes(o):S[f.id]===o;
+  return `<div class="field" role="group" aria-label="${esc(f.label)}">${lab}<div class="chips ${f.type}" data-chips="${f.id}" data-kind="${f.type}">${f.options.map(o=>`<button type="button" class="chip" aria-pressed="${on(o)}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div></div>`;
+ }
+ if(f.type==='colors'){
+  const names={primary:'Primary',accent:'Accent',bg:'Background',text:'Text'};
+  return `<div class="field">${lab}<div class="colors">${Object.keys(names).map(k=>`<div class="sw"><span>${names[k]}</span><div class="in"><input type="color" id="c_${k}" data-c="${k}" value="${S.colors[k]}" aria-label="${names[k]} color"><input type="text" id="h_${k}" data-h="${k}" value="${S.colors[k]}" aria-label="${names[k]} hex"></div></div>`).join('')}</div>
+  <div class="mock" id="mock"></div><div class="contrast" id="contrast"></div></div>`;
+ }
+ return '';
+}
+function renderForm(){
+ let n=0;
+ $('form').innerHTML=visibleSections().map(s=>{
+  n++;
+  const fs=s.fields;let html='',i=0;
+  while(i<fs.length){
+   if(fs[i].half&&fs[i+1]&&fs[i+1].half){html+=`<div class="row2">${fieldHTML(fs[i])}${fieldHTML(fs[i+1])}</div>`;i+=2}
+   else{html+=fieldHTML(fs[i]);i++}
+  }
+  return `<section class="card"><h2><span class="n">${String(n).padStart(2,'0')}</span>${s.title}<small>${s.sub}</small></h2><div class="body">${html}</div></section>`;
+ }).join('');
+ renderTemplates();renderTips();paintColors();update();
+}
+function renderTemplates(){
+ $('templates').innerHTML='<span class="lbl">เริ่มจากเทมเพลต:</span>'+TEMPLATES[mode].map((t,i)=>`<button class="tpl" data-tpl="${i}">${t.name}</button>`).join('');
+}
+function renderTips(){$('tipList').innerHTML=TIPS[mode].map(t=>`<li>${t}</li>`).join('')}
+
+/* ---------- color helpers ---------- */
+function lum(hex){const c=hex.replace('#','').match(/../g).map(x=>{const v=parseInt(x,16)/255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*c[0]+.7152*c[1]+.0722*c[2]}
+function ratio(a,b){const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+const onColor=hex=>ratio(hex,'#ffffff')>=ratio(hex,'#111111')?'#ffffff':'#111111';
+function paintColors(){
+ const c=S.colors,m=$('mock');if(!m)return;
+ m.style.background=c.bg;m.style.color=c.text;
+ m.innerHTML=`<div class="bar" style="background:linear-gradient(90deg,${c.primary} 70%,${c.accent} 70%)"></div><div class="in"><div><b>${esc(S.name||'Project name')}</b><div style="opacity:.7">ตัวอย่างข้อความบนพื้นหลัง</div></div><button type="button" tabindex="-1" style="background:${c.primary};color:${onColor(c.primary)}">ปุ่มหลัก</button></div>`;
+ const r1=ratio(c.text,c.bg),r2=ratio(c.primary,onColor(c.primary)),r3=ratio(c.primary,c.bg);
+ const p=(lbl,r,min)=>`<span class="pill ${r>=min?'ok':'warn'}">${lbl} ${r.toFixed(1)}:1 ${r>=min?'ผ่าน AA':'ต่ำกว่า AA'}</span>`;
+ $('contrast').innerHTML=p('Text / BG',r1,4.5)+p('Button',r2,4.5)+p('Primary / BG',r3,3);
+}
+
+/* ---------- prompt builder ---------- */
+const L=(en,th)=>lang==='th'?th:en;
+const list=a=>a&&a.length?a.join(', '):L('(choose what fits the user journey)','(ให้เลือกตามความเหมาะสมของ user journey)');
+const lines=t=>t.split('\n').map(x=>x.trim()).filter(Boolean);
+const H=t=>`## ${t}`;
+
+function toolNote(){
+ const t=S.aiTool;
+ const m={
+  'Claude':L('Deliver the result as one complete, self-contained artifact that runs without a build step. Include all CSS and JS inline.','ส่งผลลัพธ์เป็น artifact ไฟล์เดียวที่สมบูรณ์ รันได้ทันทีโดยไม่ต้อง build รวม CSS และ JS ไว้ในไฟล์'),
+  'ChatGPT':L('Return the complete code in a single code block first, then a short list of design decisions. Do not omit sections with placeholders like "...rest of code".','ส่งโค้ดทั้งหมดในโค้ดบล็อกเดียวก่อน แล้วตามด้วยสรุปการตัดสินใจด้านดีไซน์สั้น ๆ ห้ามละโค้ดด้วย "...rest of code"'),
+  'Gemini':L('Return the complete code in one file, followed by a short explanation of layout and component choices.','ส่งโค้ดทั้งหมดในไฟล์เดียว ตามด้วยคำอธิบายสั้น ๆ เรื่อง layout และการเลือก component'),
+  'v0 / Lovable / Bolt':L('Build with React, Tailwind CSS and shadcn/ui components. Split into clearly named components and pages. Use lucide-react for icons.','สร้างด้วย React, Tailwind CSS และ shadcn/ui แยก component และหน้าให้ตั้งชื่อชัดเจน ใช้ lucide-react สำหรับไอคอน'),
+  'Figma Make':L('Produce editable frames using auto layout, named layers, color and text styles, and component variants for each state.','สร้างเฟรมที่แก้ไขได้ ใช้ auto layout ตั้งชื่อ layer ใช้ color/text styles และทำ component variants สำหรับทุกสถานะ'),
+  'Cursor / Copilot':L('Work inside the existing project structure. Create components in separate files, follow the existing lint rules, and list every file you create or change.','ทำงานในโครงสร้างโปรเจกต์ที่มีอยู่ แยก component เป็นไฟล์ ทำตาม lint rules เดิม และสรุปรายชื่อไฟล์ที่สร้างหรือแก้ไข')
+ };
+ return m[t]||'';
+}
+
+function blockProject(){
+ const name=S.name||L('Untitled project','โปรเจกต์ใหม่');
+ return [H(L('Project','โปรเจกต์')),
+  `- ${L('Name','ชื่อ')}: ${name}`,
+  `- ${L('Type','ประเภท')}: ${mode==='web'?S.siteType:S.dashType+' dashboard'}`,
+  `- ${L('Users','ผู้ใช้')}: ${S.audience||L('Infer realistic personas from the context','ให้กำหนด persona ที่สมจริงจากบริบท')}`,
+  `- ${L('Goal','เป้าหมาย')}: ${S.goal||L('Help users complete their main task quickly and confidently.','ช่วยให้ผู้ใช้ทำงานหลักได้รวดเร็วและมั่นใจ')}`,
+  `- ${L('Interface language','ภาษาบนหน้าจอ')}: ${S.uiLang}${S.uiLang.includes('Thai')?L(' (use a font with proper Thai glyphs and comfortable line-height ≥1.6 for Thai text)',' (ใช้ฟอนต์ที่รองรับภาษาไทยครบ และ line-height ≥1.6 สำหรับข้อความไทย)'):''}`].join('\n');
+}
+function blockWeb(){
+ return [H(L('Site structure','โครงสร้างเว็บไซต์')),
+  `- ${L('Sections, in this order','Section เรียงตามลำดับนี้')}: ${list(S.sections)}`,
+  `- Hero: ${S.hero}`,
+  `- ${L('Navigation','การนำทาง')}: ${S.webNav}`,
+  `- ${L('Primary conversion','Conversion หลัก')}: ${S.cta} — ${L('one primary CTA per section, visible above the fold','มี CTA หลักหนึ่งปุ่มต่อ section และเห็นได้โดยไม่ต้องเลื่อน')}`,
+  `- ${L('Copy tone','โทนข้อความ')}: ${S.tone}. ${L('Write real, specific copy; no lorem ipsum.','เขียนข้อความจริงที่เฉพาะเจาะจง ห้ามใช้ lorem ipsum')}`,
+  `- SEO & content: ${list(S.seo)}`,
+  `- ${L('The value proposition must be understandable within 5 seconds of landing.','ผู้เข้าชมต้องเข้าใจคุณค่าหลักภายใน 5 วินาทีแรก')}`].join('\n');
+}
+function blockDash(){
+ const k=lines(S.kpis||'');
+ const out=[H(L('Dashboard specification','สเปกแดชบอร์ด')),
+  `- ${L('Key questions it must answer','คำถามหลักที่ต้องตอบ')}: ${S.question||L('Define the 2–3 decisions this dashboard supports','กำหนด 2–3 การตัดสินใจที่แดชบอร์ดนี้ช่วย')}`,
+  `- Layout: ${S.dashLayout}`,
+  `- KPIs:`+(k.length?'\n'+k.map(x=>`  - ${x}`).join('\n'):' '+L('propose 4–6 KPIs that fit the goal','เสนอ KPI 4–6 ตัวที่ตรงกับเป้าหมาย')),
+  `- ${L('Chart types','ชนิดกราฟ')}: ${list(S.charts)}`,
+  `- ${L('Filters','ตัวกรอง')}: ${list(S.filters)} — ${L('filters apply globally and show the active state clearly','ตัวกรองมีผลทั้งหน้าและแสดงสถานะที่เลือกอยู่ชัดเจน')}`,
+  '',H(L('Data & behavior','ข้อมูลและพฤติกรรม')),
+  `- ${L('Data source','แหล่งข้อมูล')}: ${S.source}${S.source==='Realistic sample data'?L(' — generate believable numbers with seasonality and a few outliers',' — สร้างตัวเลขที่สมจริง มีฤดูกาลและค่าผิดปกติบ้าง'):''}`,
+  `- ${L('Refresh','การอัปเดต')}: ${S.refresh}`,
+  `- ${L('Status & alerts','สถานะและการแจ้งเตือน')}: ${list(S.alerts)}`,
+  `- ${L('Features','ฟีเจอร์')}: ${list(S.dashFeat)}`,
+  '',H(L('Dashboard design rules','กฎการออกแบบแดชบอร์ด')),
+  `- ${L('Summary first: KPI row at top-left, trends next, detail tables last.','สรุปก่อน: แถว KPI ด้านบนซ้าย ตามด้วยแนวโน้ม แล้วจึงเป็นตารางรายละเอียด')}`,
+  `- ${L('Every KPI card shows value, unit, target, change vs previous period, and a sparkline.','KPI ทุกการ์ดแสดงค่า หน่วย เป้าหมาย การเปลี่ยนแปลงเทียบช่วงก่อน และ sparkline')}`,
+  `- ${L('Status colors (green / amber / red) are reserved for status only and stay separate from brand colors; pair color with an icon or label.','สีสถานะ (เขียว/เหลือง/แดง) ใช้เฉพาะสถานะ แยกจากสีแบรนด์ และต้องมีไอคอนหรือข้อความกำกับ')}`,
+  `- ${L('Bar charts start at zero, axes show units, numbers use tabular figures and consistent decimals.','กราฟแท่งเริ่มที่ศูนย์ แกนมีหน่วย ตัวเลขใช้ tabular figures และทศนิยมสม่ำเสมอ')}`,
+  `- ${L('No 3D charts; donut only for ≤5 parts; limit each chart to one clear message with a descriptive title.','ห้ามใช้กราฟ 3D ใช้ donut เมื่อไม่เกิน 5 กลุ่ม แต่ละกราฟสื่อสารเรื่องเดียวพร้อมชื่อที่บอกความหมาย')}`];
+ return out.join('\n');
+}
+function blockVisual(){
+ const c=S.colors;
+ return [H(L('Visual design','การออกแบบภาพ')),
+  `- Style: ${S.style}`,
+  `- ${L('Colors','สี')}: primary ${c.primary}, accent ${c.accent}, background ${c.bg}, text ${c.text}${mode==='dash'?L('; status: success #16a34a, warning #d97706, critical #dc2626','; สถานะ: success #16a34a, warning #d97706, critical #dc2626'):''}`,
+  `- Typography: ${S.font}${L(', with a clear type scale (e.g. 12 / 14 / 16 / 20 / 28 / 36)',' พร้อม type scale ที่ชัดเจน (เช่น 12 / 14 / 16 / 20 / 28 / 36)')}`,
+  `- Corner radius: ${S.radius}`,
+  `- ${L('Density','ความหนาแน่น')}: ${S.density}; ${L('use an 8-point spacing system','ใช้ระบบระยะห่าง 8 พอยต์')}`,
+  `- Motion: ${S.motion}${S.motion!=='None'?L('; respect prefers-reduced-motion','; รองรับ prefers-reduced-motion'):''}`,
+  `- ${L('Define all colors, spacing and radii as design tokens and use them consistently.','กำหนดสี ระยะห่าง และมุมโค้งเป็น design tokens และใช้อย่างสม่ำเสมอ')}`].join('\n');
+}
+function blockUX(){
+ return [H(L('UX, states & accessibility','UX สถานะ และการเข้าถึง')),
+  `- ${L('States to design','สถานะที่ต้องออกแบบ')}: ${list(S.states)}`,
+  `- ${L('Principles','หลักการ')}: ${list(S.uxp)}`,
+  `- ${L('Responsive','อุปกรณ์')}: ${S.responsive}${mode==='dash'?L(' — on mobile, stack KPI cards and make tables scroll horizontally inside their container',' — บนมือถือให้ KPI การ์ดเรียงลงมา และตารางเลื่อนแนวนอนภายในกรอบ'):''}`].join('\n');
+}
+function blockBuild(){
+ const out=[H(L('Build & deliverables','การพัฒนาและสิ่งที่ส่งมอบ')),
+  `- Platform: ${S.platform}`,
+  `- UI framework: ${S.framework}`,
+  `- ${L('Deliver','ส่งมอบ')}: ${list(S.deliver)}`,
+  `- ${L('Every visible control must work. No dead buttons or fake links.','ทุกปุ่มที่มองเห็นต้องทำงานได้จริง ห้ามมีปุ่มหลอกหรือลิงก์ปลอม')}`];
+ const tn=toolNote();if(tn)out.push(`- ${S.aiTool}: ${tn}`);
+ return out.join('\n');
+}
+function blockExtra(){return S.extra?[H(L('Additional requirements','ข้อกำหนดเพิ่มเติม')),S.extra].join('\n'):''}
+function blockQuality(){
+ return [H(L('Quality bar','มาตรฐานคุณภาพ')),
+  L('Before finishing, review the result as a senior product designer and front-end engineer: check alignment, spacing consistency, contrast, responsive behavior at 375px / 768px / 1440px, keyboard access, and all interaction states. Prioritize clarity over decoration.',
+    'ก่อนส่งงาน ให้ตรวจทานในมุมของ senior product designer และ front-end engineer: การจัดแนว ระยะห่าง ความคมชัดของสี การแสดงผลที่ 375px / 768px / 1440px การใช้งานด้วยคีย์บอร์ด และทุกสถานะของการโต้ตอบ ให้ความชัดเจนสำคัญกว่าการตกแต่ง')].join('\n');
+}
+function buildPrompt(){
+ const role=mode==='web'
+  ?L('Act as a senior web designer, UX writer and front-end engineer. Design and build the website below with production-ready quality.','ทำหน้าที่เป็น senior web designer, UX writer และ front-end engineer ออกแบบและสร้างเว็บไซต์ต่อไปนี้ให้มีคุณภาพระดับใช้งานจริง')
+  :L('Act as a senior dashboard and data-visualization designer and front-end engineer. Design and build the dashboard below with production-ready quality.','ทำหน้าที่เป็น senior dashboard / data visualization designer และ front-end engineer ออกแบบและสร้างแดชบอร์ดต่อไปนี้ให้มีคุณภาพระดับใช้งานจริง');
+ if(fmt==='short'){
+  const c=S.colors;
+  if(mode==='web')return L(
+   `Design and build a ${S.siteType.toLowerCase()} for "${S.name||'our company'}" aimed at ${S.audience||'its target users'}. Sections: ${list(S.sections)}. ${S.hero} hero, ${S.webNav.toLowerCase()} navigation, primary CTA "${S.cta}". ${S.style} style, colors ${c.primary} / ${c.accent} on ${c.bg}, ${S.font} font, ${S.tone.toLowerCase()} copy in ${S.uiLang}. Responsive (${S.responsive}), WCAG AA, every button working. Build with ${S.platform} + ${S.framework}.`,
+   `ออกแบบและสร้าง ${S.siteType} สำหรับ "${S.name||'บริษัทของเรา'}" กลุ่มเป้าหมาย ${S.audience||'ผู้ใช้หลัก'} มี section: ${list(S.sections)} Hero แบบ ${S.hero} การนำทางแบบ ${S.webNav} CTA หลัก "${S.cta}" สไตล์ ${S.style} สี ${c.primary} / ${c.accent} บนพื้น ${c.bg} ฟอนต์ ${S.font} ข้อความโทน ${S.tone} ภาษา ${S.uiLang} รองรับ ${S.responsive} ผ่าน WCAG AA ทุกปุ่มใช้งานได้จริง สร้างด้วย ${S.platform} + ${S.framework}`);
+  const k=lines(S.kpis||'').join('; ');
+  return L(
+   `Design and build a ${S.dashType.toLowerCase()} dashboard "${S.name||'Dashboard'}" for ${S.audience||'managers'}. It must answer: ${S.question||'are we on target, and where should we act?'} KPIs: ${k||'4–6 relevant KPIs with targets'}. Charts: ${list(S.charts)}. Filters: ${list(S.filters)}. ${S.dashLayout} layout, ${S.style} style, ${S.density.toLowerCase()} density, colors ${c.primary} / ${c.accent} on ${c.bg}, ${S.font} font, UI in ${S.uiLang}. Data: ${S.source}, refresh ${S.refresh.toLowerCase()}. Show targets, RAG status and change vs last period. Build with ${S.platform} + ${S.framework}.`,
+   `ออกแบบและสร้างแดชบอร์ด ${S.dashType} ชื่อ "${S.name||'Dashboard'}" สำหรับ ${S.audience||'ผู้จัดการ'} ต้องตอบคำถาม: ${S.question||'เป็นไปตามเป้าหรือไม่ และต้องแก้ที่ไหน'} KPI: ${k||'KPI 4–6 ตัวพร้อมเป้าหมาย'} กราฟ: ${list(S.charts)} ตัวกรอง: ${list(S.filters)} Layout ${S.dashLayout} สไตล์ ${S.style} ความหนาแน่น ${S.density} สี ${c.primary} / ${c.accent} บนพื้น ${c.bg} ฟอนต์ ${S.font} ภาษา ${S.uiLang} ข้อมูล: ${S.source} อัปเดต ${S.refresh} แสดงเส้นเป้า สถานะสี และการเปลี่ยนแปลงเทียบช่วงก่อน สร้างด้วย ${S.platform} + ${S.framework}`);
+ }
+ if(fmt==='visual')return [role,blockProject(),blockVisual(),mode==='web'?blockWeb():'',blockQuality()].filter(Boolean).join('\n\n');
+ return [role,blockProject(),mode==='web'?blockWeb():blockDash(),blockVisual(),blockUX(),blockBuild(),blockExtra(),blockQuality()].filter(Boolean).join('\n\n');
+}
+function countItems(){
+ let n=0;visibleSections().forEach(s=>s.fields.forEach(f=>{const v=S[f.id];if(Array.isArray(v))n+=v.length;else if(f.type!=='colors'&&v)n++}));return n;
+}
+function update(){
+ const p=buildPrompt();
+ $('out').innerHTML=esc(p).replace(/^## (.*)$/gm,'<span class="h">## $1</span>');
+ $('sWords').textContent=p.trim().split(/\s+/).length.toLocaleString();
+ $('sChars').textContent=p.length.toLocaleString();
+ $('sItems').textContent=countItems();
+}
+
+/* ---------- events ---------- */
+$('form').addEventListener('click',e=>{
+ const b=e.target.closest('.chip');if(!b)return;
+ const g=b.parentElement,id=g.dataset.chips,v=b.dataset.v;
+ if(g.dataset.kind==='multi'){
+  const a=S[id],i=a.indexOf(v);if(i>=0)a.splice(i,1);else a.push(v);
+  b.setAttribute('aria-pressed',i<0);
+ }else{S[id]=v;g.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b))}
+ update();
+});
+$('form').addEventListener('input',e=>{
+ const t=e.target;
+ if(t.dataset.f){S[t.dataset.f]=t.value;if(t.dataset.f==='name')paintColors();update();return}
+ if(t.dataset.c){S.colors[t.dataset.c]=t.value;$('h_'+t.dataset.c).value=t.value;paintColors();update();return}
+ if(t.dataset.h){let v=t.value.trim();if(!v.startsWith('#'))v='#'+v;if(/^#[0-9a-f]{6}$/i.test(v)){S.colors[t.dataset.h]=v.toLowerCase();$('c_'+t.dataset.h).value=v.toLowerCase();paintColors();update()}}
+});
+$('form').addEventListener('change',e=>{if(e.target.tagName==='SELECT'){S[e.target.dataset.f]=e.target.value;update()}});
+function setMode(m){
+ mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));
+ renderForm();
+}
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+document.querySelectorAll('[data-fmt]').forEach(b=>b.onclick=()=>{fmt=b.dataset.fmt;document.querySelectorAll('[data-fmt]').forEach(x=>x.setAttribute('aria-pressed',x===b));update()});
+document.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{lang=b.dataset.lang;document.querySelectorAll('[data-lang]').forEach(x=>x.setAttribute('aria-pressed',x===b));update()});
+$('templates').addEventListener('click',e=>{
+ const b=e.target.closest('[data-tpl]');if(!b)return;
+ const t=TEMPLATES[mode][+b.dataset.tpl];
+ Object.entries(t.v).forEach(([k,v])=>{S[k]=Array.isArray(v)?[...v]:(typeof v==='object'?{...v}:v)});
+ if(!S.name)S.name=t.name;
+ renderForm();toast('ใช้เทมเพลต '+t.name+' แล้ว');
+});
+
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),1800)}
+$('copyBtn').onclick=()=>{
+ const text=$('out').textContent;
+ const fallback=()=>{const r=document.createRange();r.selectNodeContents($('out'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('เลือกข้อความแล้ว กด Ctrl+C เพื่อคัดลอก')};
+ try{navigator.clipboard.writeText(text).then(()=>toast('คัดลอก Prompt แล้ว'),fallback)}catch(e){fallback()}
+};
+let armed=null;
+$('resetBtn').onclick=()=>{
+ const b=$('resetBtn');
+ if(!armed){b.classList.add('danger-armed');b.textContent='กดอีกครั้งเพื่อยืนยัน';armed=setTimeout(()=>{armed=null;b.classList.remove('danger-armed');b.textContent='รีเซ็ตทั้งหมด'},3000);return}
+ clearTimeout(armed);armed=null;b.classList.remove('danger-armed');b.textContent='รีเซ็ตทั้งหมด';
+ resetState();renderForm();toast('รีเซ็ตแล้ว');
+};
+
+/* ---------- presets (per-browser) ---------- */
+const KEY='uxui-prompt-studio-presets';
+function readP(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return []}}
+function writeP(l){try{localStorage.setItem(KEY,JSON.stringify(l));return true}catch(e){toast('เบราว์เซอร์นี้ไม่อนุญาตให้บันทึก');return false}}
+function renderPresets(){
+ const l=readP();
+ if(!l.length){$('presetList').innerHTML='<div class="empty">ยังไม่มี Preset — ตั้งค่าที่ใช้บ่อยแล้วกดบันทึก</div>';return}
+ $('presetList').innerHTML=l.map((p,i)=>`<div class="preset"><div><b>${esc(p.name)}<span class="tag">${p.mode==='web'?'WEB':'DASH'}</span></b><small>${esc(p.date)}</small></div><div><button data-load="${i}">โหลด</button><button class="del" data-del="${i}">ลบ</button></div></div>`).join('');
+}
+$('saveBtn').onclick=()=>{
+ const name=$('presetName').value.trim()||S.name||'Preset ไม่มีชื่อ';
+ const l=readP();l.unshift({name,mode,state:JSON.parse(JSON.stringify(S)),date:new Date().toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'})});
+ if(writeP(l.slice(0,30))){$('presetName').value='';renderPresets();toast('บันทึก Preset แล้ว')}
+};
+$('presetList').addEventListener('click',e=>{
+ const l=readP();
+ if(e.target.dataset.load!==undefined){const p=l[+e.target.dataset.load];resetState();Object.assign(S,JSON.parse(JSON.stringify(p.state)));setMode(p.mode);toast('โหลด '+p.name+' แล้ว')}
+ if(e.target.dataset.del!==undefined){l.splice(+e.target.dataset.del,1);writeP(l);renderPresets()}
+});
+
+resetState();renderForm();renderPresets();
+</script>
+
+</body>
+</html>
